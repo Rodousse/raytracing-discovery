@@ -43,6 +43,10 @@ class ENGINE_API Camera
 
   public:
     Camera();
+    Camera(const Camera&) = default;
+    Camera(Camera&&) = default;
+    Camera& operator=(const Camera&) = default;
+    Camera& operator=(Camera&&) = default;
     virtual ~Camera() = default;
 
     virtual const Ray generateRay(const Eigen::Vector2i& pos) const = 0;
