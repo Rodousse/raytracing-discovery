@@ -2,6 +2,8 @@
 
 #include "engine/geometry/Constants.hpp"
 
+#include <limits>
+
 namespace engine
 {
 namespace geometry
@@ -21,14 +23,14 @@ RayTriangleIntersection isRayIntersectingFace(const Ray& r, const Mesh& mesh, co
     a = edge1.dot(h);
     if(a > -EPSILON && a < EPSILON)
         return returnVal;
-    f = 1.0 / a;
+    f = static_cast<Floating>(1.0) / a;
     s = r.origin - vertex0;
     u = f * s.dot(h);
-    if(u < 0.0 || u > 1.0)
+    if(u < static_cast<Floating>(0.0) || u > static_cast<Floating>(1.0))
         return returnVal;
     q = s.cross(edge1);
     v = f * r.dir.dot(q);
-    if(v < 0.0 || u + v > 1.0)
+    if(v < static_cast<Floating>(0.0) || u + v > static_cast<Floating>(1.0))
         return returnVal;
     float t = f * edge2.dot(q);
     if(t > EPSILON)
@@ -134,13 +136,13 @@ RayAABBIntersection isRayIntersectingBoundingBox(const Ray& r, const AABoundingB
 
 OrderedRayMeshIntersections findRayLightsIntersections(const Ray& r, const Scene& scene)
 {
-    std::vector<std::shared_ptr<Mesh>> candidates{};
+    std::vector<Mesh*> candidates{};
     for(const auto& mesh: scene.emissiveMeshes)
     {
         const auto intersectAABB = isRayIntersectingBoundingBox(r, mesh->aabb);
         if(intersectAABB.hit)
         {
-            candidates.emplace_back(mesh);
+            candidates.emplace_back(mesh.get());
         }
     }
 
@@ -151,18 +153,45 @@ OrderedRayMeshIntersections findRayLightsIntersections(const Ray& r, const Scene
         resultVal.insert(intersection.cbegin(), intersection.cend());
     }
 
+    return resultVal;
+}
+
+RayMeshIntersection findClosestRayLightsIntersections(const Ray& r, const Scene& scene)
+{
+    std::vector<Mesh*> candidates{};
+    for(const auto& mesh: scene.emissiveMeshes)
+    {
+        const auto intersectAABB = isRayIntersectingBoundingBox(r, mesh->aabb);
+        if(intersectAABB.hit)
+        {
+            candidates.emplace_back(mesh.get());
+        }
+    }
+
+    RayMeshIntersection resultVal{};
+    Floating closestDist = std::numeric_limits<Floating>::max();
+    for(const auto& candidate: candidates)
+    {
+        auto intersection = findClosestRayMeshIntersections(r, *candidate);
+        const Floating dist = (intersection.faceIntersection.position - r.origin).norm();
+        if(intersection.faceIntersection.hit && closestDist > dist)
+        {
+            resultVal = std::move(intersection);
+            closestDist = dist;
+        }
+    }
     return resultVal;
 }
 
 OrderedRayMeshIntersections findRaySceneIntersections(const Ray& r, const Scene& scene)
 {
-    std::vector<std::shared_ptr<Mesh>> candidates{};
+    std::vector<Mesh*> candidates{};
     for(const auto& mesh: scene.meshes)
     {
         const auto intersectAABB = isRayIntersectingBoundingBox(r, mesh->aabb);
         if(intersectAABB.hit)
         {
-            candidates.emplace_back(mesh);
+            candidates.emplace_back(mesh.get());
         }
     }
 
@@ -176,19 +205,69 @@ OrderedRayMeshIntersections findRaySceneIntersections(const Ray& r, const Scene&
     return resultVal;
 }
 
+RayMeshIntersection findClosestRaySceneIntersections(const Ray& r, const Scene& scene)
+{
+    std::vector<Mesh*> candidates{};
+    for(const auto& mesh: scene.meshes)
+    {
+        const auto intersectAABB = isRayIntersectingBoundingBox(r, mesh->aabb);
+        if(intersectAABB.hit)
+        {
+            candidates.emplace_back(mesh.get());
+        }
+    }
+
+    RayMeshIntersection resultVal{};
+    Floating closestDist = std::numeric_limits<Floating>::max();
+    for(const auto& candidate: candidates)
+    {
+        auto intersection = findClosestRayMeshIntersections(r, *candidate);
+        const Floating dist = (intersection.faceIntersection.position - r.origin).norm();
+        if(intersection.faceIntersection.hit && closestDist > dist)
+        {
+            resultVal = std::move(intersection);
+            closestDist = dist;
+        }
+    }
+
+    return resultVal;
+}
 OrderedRayMeshIntersections findRayMeshIntersections(const Ray& r, const Mesh& mesh)
 {
     OrderedRayMeshIntersections returnVal{};
     for(FaceIndex faceIdx = 0; faceIdx < mesh.faces.size(); ++faceIdx)
     {
-        const auto faceInter = isRayIntersectingFace(r, mesh, faceIdx);
+        auto faceInter = isRayIntersectingFace(r, mesh, faceIdx);
         if(faceInter.hit)
         {
             const Floating dist = (faceInter.position - r.origin).norm();
             auto& intersection = returnVal.insert({dist, RayMeshIntersection{}}).first->second;
-            intersection.faceIntersection = faceInter;
+            intersection.faceIntersection = std::move(faceInter);
             intersection.mesh = &mesh;
             intersection.faceIdx = faceIdx;
+        }
+    }
+
+    return returnVal;
+}
+
+RayMeshIntersection findClosestRayMeshIntersections(const Ray& r, const Mesh& mesh)
+{
+    RayMeshIntersection returnVal{};
+    Floating closestDist = std::numeric_limits<Floating>::max();
+    for(FaceIndex faceIdx = 0; faceIdx < mesh.faces.size(); ++faceIdx)
+    {
+        auto faceInter = isRayIntersectingFace(r, mesh, faceIdx);
+        if(faceInter.hit)
+        {
+            const Floating dist = (faceInter.position - r.origin).norm();
+            if(closestDist > dist)
+            {
+                returnVal.faceIntersection = std::move(faceInter);
+                returnVal.mesh = &mesh;
+                returnVal.faceIdx = faceIdx;
+                closestDist = dist;
+            }
         }
     }
 
