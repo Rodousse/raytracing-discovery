@@ -23,15 +23,16 @@ stbipp::Image renderScene(const Scene& scene,
                           unsigned int samples,
                           unsigned int maxDepth)
 {
-    std::vector<Ray> rays(camera->widthRenderDimensions() * camera->heightRenderDimensions());
+    std::vector<Ray> rays{};
     const auto& screenDimensions = camera->renderDimensions();
     stbipp::Image renderTarget(screenDimensions.x(), screenDimensions.y(), stbipp::Color3f(0.0f));
 
+    rays.reserve(camera->widthRenderDimensions() * camera->heightRenderDimensions());
     for(int pixelY = 0; pixelY < screenDimensions[1]; ++pixelY)
     {
         for(int pixelX = 0; pixelX < screenDimensions[0]; ++pixelX)
         {
-            rays[pixelX + pixelY * screenDimensions[0]] = camera->generateRay(Eigen::Vector2i{pixelX, pixelY});
+            rays.emplace_back(camera->generateRay(Eigen::Vector2i{pixelX, pixelY}));
         }
     }
     int pixelY = 0;
