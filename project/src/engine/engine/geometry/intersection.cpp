@@ -21,7 +21,7 @@ RayTriangleIntersection isRayIntersectingFace(const Ray& r, const Mesh& mesh, co
     edge2 = vertex2 - vertex0;
     h = r.dir.cross(edge2);
     a = edge1.dot(h);
-    if(a > -EPSILON && a < EPSILON)
+    if(std::fabs(a) < EPSILON)
         return returnVal;
     f = static_cast<Floating>(1.0) / a;
     s = r.origin - vertex0;
