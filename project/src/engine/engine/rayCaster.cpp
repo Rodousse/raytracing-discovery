@@ -2,10 +2,10 @@
 
 #include "engine/geometry/Constants.hpp"
 #include "engine/geometry/intersection.hpp"
-#include "engine/geometry/sampling.hpp"
 
 #include <exception>
 #include <iostream>
+#include <omp.h>
 
 namespace engine
 {
@@ -35,76 +35,91 @@ stbipp::Image renderScene(const Scene& scene,
             rays.emplace_back(camera->generateRay(Eigen::Vector2i{pixelX, pixelY}));
         }
     }
-    int pixelY = 0;
-    int nbRayTraced = 0;
-#pragma omp parallel shared(renderTarget, rays, nbRayTraced) private(pixelY)
-#pragma omp for schedule(dynamic, 1)
-    for(pixelY = 0; pixelY < screenDimensions[1]; ++pixelY)
+#pragma omp parallel shared(renderTarget, rays)
     {
-        for(int pixelX = 0; pixelX < screenDimensions[0]; ++pixelX)
+        RenderInformations threadRenderInformations{};
+        threadRenderInformations.maxDepth = maxDepth;
+        threadRenderInformations.depth = 0;
+        threadRenderInformations.isLight = false;
+
+#pragma omp for schedule(dynamic, 1)
+        for(int pixelY = 0; pixelY < screenDimensions[1]; ++pixelY)
         {
-            for(unsigned int sampleCount = 0; sampleCount < samples; ++sampleCount)
+            for(int pixelX = 0; pixelX < screenDimensions[0]; ++pixelX)
             {
-                const auto pixelColor = castRay(rays[pixelX + pixelY * screenDimensions[0]], scene, 0, maxDepth);
-                renderTarget(pixelX, pixelY) += stbipp::Color4f(pixelColor.x(), pixelColor.y(), pixelColor.z(), 1.0f);
+                auto& renderInfo = threadRenderInformations;
+                stbipp::Color4f pixelColor{0.0f};
+                for(unsigned int sampleCount = 0; sampleCount < samples; ++sampleCount)
+                {
+                    const auto sampleColor = castRay(rays[pixelX + pixelY * screenDimensions[0]], scene, renderInfo);
+                    pixelColor += stbipp::Color4f(sampleColor.x(), sampleColor.y(), sampleColor.z(), 1.0f);
+                    renderInfo.depth = 0;
+                    renderInfo.isLight = false;
+                }
+                pixelColor /= stbipp::Color4f(samples);
+                renderTarget(pixelX, pixelY) =
+                  stbipp::Color4f(std::min(std::max(std::sqrt(pixelColor.r()), 0.0f), 1.0f),
+                                  std::min(std::max(std::sqrt(pixelColor.g()), 0.0f), 1.0f),
+                                  std::min(std::max(std::sqrt(pixelColor.b()), 0.0f), 1.0f));
             }
-            renderTarget(pixelX, pixelY) /= stbipp::Color4f(samples);
-            renderTarget(pixelX, pixelY) =
-              stbipp::Color4f(std::min(std::max(std::sqrt(renderTarget(pixelX, pixelY).r()), 0.0f), 1.0f),
-                              std::min(std::max(std::sqrt(renderTarget(pixelX, pixelY).g()), 0.0f), 1.0f),
-                              std::min(std::max(std::sqrt(renderTarget(pixelX, pixelY).b()), 0.0f), 1.0f));
-            ++nbRayTraced;
-            std::cout << "Achieved : " << int(100 * static_cast<double>(nbRayTraced) / rays.size()) << "%" << std::endl;
         }
     }
 
     return renderTarget;
 }
 
-Vector3 castRay(const Ray& r, const Scene& scene, unsigned int depth, unsigned int maxDepth)
+Vector3 castRay(const Ray& r, const Scene& scene, RenderInformations& renderParams)
 {
-    if(depth == maxDepth)
+    if(renderParams.depth == renderParams.maxDepth)
     {
         return {0.0, 0.0, 0.0};
     }
 
-    const auto orderedLightIntersections = geometry::findRayLightsIntersections(r, scene);
-    const auto orderedMeshIntersections = geometry::findRaySceneIntersections(r, scene);
-    if(orderedMeshIntersections.empty() && orderedLightIntersections.empty())
+    const auto lightIntersections = geometry::findClosestRayLightsIntersections(r, scene);
+    const auto meshIntersections = geometry::findClosestRaySceneIntersections(r, scene);
+    if(!(meshIntersections.faceIntersection.hit || lightIntersections.faceIntersection.hit))
     {
         return scene.backgroundColor;
     }
-    const auto nearestLightIntersection = orderedLightIntersections.cbegin();
-    if(!orderedLightIntersections.empty() &&
-       (orderedMeshIntersections.empty() ||
-        (nearestLightIntersection->first < orderedMeshIntersections.cbegin()->first)))
+    const auto rayMeshDist = (meshIntersections.faceIntersection.position - r.origin).norm();
+    const auto rayLightDist = (lightIntersections.faceIntersection.position - r.origin).norm();
+    if(lightIntersections.faceIntersection.hit &&
+       (!meshIntersections.faceIntersection.hit || (rayLightDist < rayMeshDist)))
     {
-        return dynamic_cast<EmissiveMaterial*>(nearestLightIntersection->second.mesh->material.get())->emissiveColor;
+        renderParams.isLight = true;
+        return dynamic_cast<EmissiveMaterial*>(lightIntersections.mesh->material.get())->emissiveColor / 6.0;
     }
-    const auto& nearestIntersection = orderedMeshIntersections.cbegin()->second;
-    const auto* hitMesh = nearestIntersection.mesh;
-    Ray newRay{};
-    Vector3 normal = hitMesh->faces[nearestIntersection.faceIdx].normal;
+    const auto* hitMesh = meshIntersections.mesh;
+    Vector3 normal = hitMesh->faces[meshIntersections.faceIdx].normal;
 
-    const auto& face = hitMesh->faces[nearestIntersection.faceIdx];
+    const auto& face = hitMesh->faces[meshIntersections.faceIdx];
     const auto& nv0 = hitMesh->vertices[face.indices[0]].normal;
     const auto& nv1 = hitMesh->vertices[face.indices[1]].normal;
     const auto& nv2 = hitMesh->vertices[face.indices[2]].normal;
-    const auto& uv = nearestIntersection.faceIntersection.uv;
+    const auto& uv = meshIntersections.faceIntersection.uv;
     const auto& p0 = hitMesh->vertices[face.indices[0]].pos;
     const auto& p1 = hitMesh->vertices[face.indices[1]].pos;
     const auto& p2 = hitMesh->vertices[face.indices[2]].pos;
-    const auto r0 = p0 + (p0 - nearestIntersection.faceIntersection.position).dot(nv0) * nv0;
-    const auto r1 = p1 + (p1 - nearestIntersection.faceIntersection.position).dot(nv1) * nv1;
-    const auto r2 = p2 + (p2 - nearestIntersection.faceIntersection.position).dot(nv2) * nv2;
+    const auto r0 = p0 + (p0 - meshIntersections.faceIntersection.position).dot(nv0) * nv0;
+    const auto r1 = p1 + (p1 - meshIntersections.faceIntersection.position).dot(nv1) * nv1;
+    const auto r2 = p2 + (p2 - meshIntersections.faceIntersection.position).dot(nv2) * nv2;
 
     normal = (1.0 - uv.x() - uv.y()) * nv0 + (uv.x() * nv1) + (uv.y() * nv2);
     normal.normalize();
 
-    newRay.dir = sampling::generateRandomUniformRayDir(normal);
+    Ray newRay{};
+    newRay.dir = sampling::generateRandomUniformHemisphereRayDir(normal, renderParams.sampler);
     newRay.origin = (1 - uv.x() - uv.y()) * r0 + uv.x() * r1 + uv.y() * r2;
-    // newRay.origin = nearestIntersection.faceIntersection.position ;
-    return (hitMesh->material->diffuseColor.cwiseProduct(castRay(newRay, scene, depth + 1, maxDepth))) / 2.0f;
+    // newRay.origin = meshIntersections.faceIntersection.position ;
+    bool hitLight{false};
+    renderParams.depth++;
+    Vector3 radiance = castRay(newRay, scene, renderParams);
+    if(!hitLight)
+    {
+        radiance *= radiance.dot(Vector3{0.2126, 0.7152, 0.0722});
+    }
+
+    return (hitMesh->material->diffuseColor.cwiseProduct(radiance));
 }
 
 } // namespace engine

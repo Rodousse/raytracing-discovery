@@ -2,22 +2,24 @@
 
 #include "engine/geometry/Constants.hpp"
 
-#include <random>
-
 namespace engine
 {
 namespace sampling
 {
-Vector3 generateRandomUniformRayDir(const Vector3& normal)
+UniformSampler::UniformSampler(): m_generator(std::random_device{}()), m_distribution(-1.0, 1.0) {}
+
+Floating UniformSampler::sample()
 {
-    static std::random_device rd;  // Will be used to obtain a seed for the random number engine
-    static std::mt19937 gen(rd()); // Standard mersenne_twister_engine seeded with rd()
-    static std::uniform_real_distribution<Floating> dis(-1.0, 1.0);
+    return m_distribution(m_generator);
+}
+
+Vector3 generateRandomUniformHemisphereRayDir(const Vector3& normal, UniformSampler& sampler)
+{
     Vector3 dir{};
     do
     {
-        dir = {dis(gen), dis(gen), dis(gen)};
-    } while(dir.norm() * dir.norm() > 1.0f);
+        dir = {sampler.sample(), sampler.sample(), sampler.sample()};
+    } while(dir.norm() > 1.0f);
     if(dir.dot(normal) < 0)
     {
         dir = -dir;
