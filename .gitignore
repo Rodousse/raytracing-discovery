@@ -1,6 +1,7 @@
-project/build/**
-third_party/build/**
-third_party/install/**
+project/build**
+third_party/build**
+third_party/install**
+**.cache**
 
 # Prerequisites
 *.d

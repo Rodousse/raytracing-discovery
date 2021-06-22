@@ -9,6 +9,7 @@ set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 
+option(BUILD_BENCHMARK "Build benchmark" ON)
 ############################## GLOBAL DEF ############################
 
 include(GenerateExportHeader)
@@ -38,6 +39,7 @@ find_package(Stbipp REQUIRED)
 find_package(Assimp REQUIRED)
 find_package(OpenMP REQUIRED)
 
+
 if(${CMAKE_BUILD_TYPE} MATCHES Debug)
     get_target_property(ASSIMP_LIBRARY_PATH assimp::assimp IMPORTED_LOCATION_DEBUG)
     get_target_property(STBIPP_LIBRARY_PATH Stbipp::Stbipp IMPORTED_LOCATION_DEBUG)
@@ -46,7 +48,6 @@ else()
     get_target_property(STBIPP_LIBRARY_PATH Stbipp::Stbipp IMPORTED_LOCATION_RELEASE)
 endif()
 
-message(${STBIPP_LIBRARY_PATH})
 list(APPEND WIN_SHARED_LIBRARIES ${ASSIMP_LIBRARY_PATH})
 list(APPEND WIN_SHARED_LIBRARIES ${STBIPP_LIBRARY_PATH})
 
@@ -54,3 +55,7 @@ list(APPEND WIN_SHARED_LIBRARIES ${STBIPP_LIBRARY_PATH})
 
 add_subdirectory(src/engine)
 add_subdirectory(src/app)
+if(BUILD_BENCHMARK)
+    find_package(benchmark REQUIRED)
+    add_subdirectory(src/benchmark)
+endif()
