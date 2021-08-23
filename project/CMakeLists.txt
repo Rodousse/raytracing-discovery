@@ -24,9 +24,6 @@ if ("${CMAKE_CXX_COMPILER_ID}" MATCHES "MSVC")
     add_compile_options(/wd4251)
 endif()
 
-# DLL files path to copy next to the executable for windows
-set(WIN_SHARED_LIBRARIES "")
-
 # Resource path
 set(RESOURCE_PATH "${PROJECT_SOURCE_DIR}/resources")
 configure_file(cmake/defines.h.in ${GENERATED_DIR}/defines.h @ONLY)
@@ -39,17 +36,6 @@ find_package(Stbipp REQUIRED)
 find_package(Assimp REQUIRED)
 find_package(OpenMP REQUIRED)
 
-
-if(${CMAKE_BUILD_TYPE} MATCHES Debug)
-    get_target_property(ASSIMP_LIBRARY_PATH assimp::assimp IMPORTED_LOCATION_DEBUG)
-    get_target_property(STBIPP_LIBRARY_PATH Stbipp::Stbipp IMPORTED_LOCATION_DEBUG)
-else()
-    get_target_property(ASSIMP_LIBRARY_PATH assimp::assimp IMPORTED_LOCATION_RELEASE)
-    get_target_property(STBIPP_LIBRARY_PATH Stbipp::Stbipp IMPORTED_LOCATION_RELEASE)
-endif()
-
-list(APPEND WIN_SHARED_LIBRARIES ${ASSIMP_LIBRARY_PATH})
-list(APPEND WIN_SHARED_LIBRARIES ${STBIPP_LIBRARY_PATH})
 
 ############################## SOURCES ###############################
 
