@@ -1,5 +1,7 @@
 #include "engine/data/PerspectiveCamera.hpp"
 
+#include "engine/geometry/CommonTypes.hpp"
+
 #include <iostream>
 #include <numeric>
 #include <stdexcept>
@@ -18,20 +20,14 @@ void PerspectiveCamera::resizeWorldDimensions()
 
 const Ray PerspectiveCamera::generateRay(const Eigen::Vector2i& pixelPos) const
 {
-    Ray ray;
-
     // camera space position
-    Vector2 cameraCoord;
+    Vector2 cameraCoord = -(pixelPos.cast<Floating>() - (renderDimensions().cast<Floating>() / 2.0f))
+                             .cwiseQuotient(renderDimensions().cast<Floating>());
 
-    cameraCoord = (pixelPos.cast<Floating>() - (renderDimensions().cast<Floating>() / 2.0f));
-    cameraCoord = cameraCoord.cwiseQuotient(renderDimensions().cast<Floating>());
-    cameraCoord = -cameraCoord;
-
-    ray.origin = position() + (m_right.normalized() * cameraCoord.x() * m_widthWorld) +
-                 (m_up.normalized() * cameraCoord.y() * m_heightWorld) + (m_forward.normalized() * nearPlaneDistance());
-    ray.dir = (ray.origin - position()).normalized();
-
-    return ray;
+    const Vector3 origin = m_position + (m_right.normalized() * cameraCoord.x() * m_widthWorld) +
+                           (m_up.normalized() * cameraCoord.y() * m_heightWorld) +
+                           (m_forward.normalized() * nearPlaneDistance());
+    return Ray{origin, (origin - m_position).normalized()};
 }
 
 /********************************** PUBLIC ****************************/

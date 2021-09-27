@@ -19,13 +19,12 @@ Vector3 generateRandomUniformHemisphereRayDir(const Vector3& normal, UniformSamp
     do
     {
         dir = {sampler.sample(), sampler.sample(), sampler.sample()};
-    } while(dir.norm() > 1.0f);
-    if(dir.dot(normal) < 0)
+    } while(dir.norm() > 1.0);
+    if(dir.dot(normal) < 0.0)
     {
-        dir = -dir;
+        return -dir.normalized();
     }
-    dir.normalize();
-    return dir;
+    return dir.normalized();
 }
 
 } // namespace sampling
