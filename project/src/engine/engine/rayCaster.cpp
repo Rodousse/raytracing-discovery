@@ -39,8 +39,6 @@ stbipp::Image renderScene(const Scene& scene,
     {
         RenderInformations threadRenderInformations{};
         threadRenderInformations.maxDepth = maxDepth;
-        threadRenderInformations.depth = 0;
-        threadRenderInformations.isLight = false;
 
 #pragma omp for schedule(dynamic, 1)
         for(int pixelY = 0; pixelY < screenDimensions[1]; ++pixelY)
@@ -51,10 +49,10 @@ stbipp::Image renderScene(const Scene& scene,
                 stbipp::Color4f pixelColor{0.0f};
                 for(unsigned int sampleCount = 0; sampleCount < samples; ++sampleCount)
                 {
-                    const auto sampleColor = castRay(rays[pixelX + pixelY * screenDimensions[0]], scene, renderInfo);
-                    pixelColor += stbipp::Color4f(sampleColor.x(), sampleColor.y(), sampleColor.z(), 1.0f);
                     renderInfo.depth = 0;
                     renderInfo.isLight = false;
+                    const auto sampleColor = castRay(rays[pixelX + pixelY * screenDimensions[0]], scene, renderInfo);
+                    pixelColor += stbipp::Color4f(sampleColor.x(), sampleColor.y(), sampleColor.z(), 1.0f);
                 }
                 pixelColor /= stbipp::Color4f(samples);
                 renderTarget(pixelX, pixelY) =
