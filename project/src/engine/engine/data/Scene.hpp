@@ -16,7 +16,7 @@ struct ENGINE_API Scene
     std::vector<std::shared_ptr<Mesh>> meshes{};
     std::vector<std::shared_ptr<Mesh>> emissiveMeshes{};
 
-    Vector3 backgroundColor{1.0, 1.0, 1.0};
+    Vector3 backgroundColor{0.0, 0.0, 0.0};
 };
 
 } // namespace engine

@@ -7,7 +7,8 @@ set(ENGINE_SRC
     engine/data/Mesh.cpp
     engine/data/PerspectiveCamera.cpp
     engine/geometry/intersection.cpp
-    engine/geometry/sampling.cpp)
+    engine/geometry/sampling.cpp
+    engine/tonemapping/reinhard.cpp)
 
 
 set(ENGINE_HEADERS
@@ -23,7 +24,8 @@ set(ENGINE_HEADERS
     engine/geometry/Constants.hpp
     engine/geometry/intersection.hpp
     engine/geometry/Ray.hpp
-    engine/geometry/sampling.hpp)
+    engine/geometry/sampling.hpp
+    engine/tonemapping/reinhard.hpp)
 
 
 add_library(engine SHARED ${ENGINE_SRC} ${ENGINE_HEADERS})
