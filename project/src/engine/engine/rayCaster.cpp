@@ -1,5 +1,6 @@
 #include "engine/rayCaster.hpp"
 
+#include "engine/geometry/CommonTypes.hpp"
 #include "engine/geometry/Constants.hpp"
 #include "engine/geometry/intersection.hpp"
 
@@ -55,10 +56,7 @@ stbipp::Image renderScene(const Scene& scene,
                     pixelColor += stbipp::Color4f(sampleColor.x(), sampleColor.y(), sampleColor.z(), 1.0f);
                 }
                 pixelColor /= stbipp::Color4f(samples);
-                renderTarget(pixelX, pixelY) =
-                  stbipp::Color4f(std::min(std::max(std::sqrt(pixelColor.r()), 0.0f), 1.0f),
-                                  std::min(std::max(std::sqrt(pixelColor.g()), 0.0f), 1.0f),
-                                  std::min(std::max(std::sqrt(pixelColor.b()), 0.0f), 1.0f));
+                renderTarget(pixelX, pixelY) = pixelColor;
             }
         }
     }
@@ -70,7 +68,7 @@ Vector3 castRay(const Ray& r, const Scene& scene, RenderInformations& renderPara
 {
     if(renderParams.depth == renderParams.maxDepth)
     {
-        return {0.0, 0.0, 0.0};
+        return Vector3::Zero();
     }
 
     const auto lightIntersections = geometry::findClosestRayLightsIntersections(r, scene);
@@ -85,7 +83,7 @@ Vector3 castRay(const Ray& r, const Scene& scene, RenderInformations& renderPara
        (!meshIntersections.faceIntersection.hit || (rayLightDist < rayMeshDist)))
     {
         renderParams.isLight = true;
-        return dynamic_cast<EmissiveMaterial*>(lightIntersections.mesh->material.get())->emissiveColor / 6.0;
+        return dynamic_cast<EmissiveMaterial*>(lightIntersections.mesh->material.get())->emissiveColor;
     }
     const auto* hitMesh = meshIntersections.mesh;
     Vector3 normal = hitMesh->faces[meshIntersections.faceIdx].normal;
@@ -108,15 +106,8 @@ Vector3 castRay(const Ray& r, const Scene& scene, RenderInformations& renderPara
     Ray newRay{};
     newRay.dir = sampling::generateRandomUniformHemisphereRayDir(normal, renderParams.sampler);
     newRay.origin = (1 - uv.x() - uv.y()) * r0 + uv.x() * r1 + uv.y() * r2;
-    // newRay.origin = meshIntersections.faceIntersection.position ;
-    bool hitLight{false};
     renderParams.depth++;
-    Vector3 radiance = castRay(newRay, scene, renderParams);
-    if(!hitLight)
-    {
-        radiance *= radiance.dot(Vector3{0.2126, 0.7152, 0.0722});
-    }
-
+    const auto radiance = castRay(newRay, scene, renderParams);
     return (hitMesh->material->diffuseColor.cwiseProduct(radiance));
 }
 
