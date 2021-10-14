@@ -18,8 +18,8 @@ static void BM_Raytracing(benchmark::State& state)
         const auto result = engine::renderScene(scene, 0, state.range(0), 3);
     }
 }
-// Benchmark : Samples, Dimensions, Depth, nbThreads
-BENCHMARK(BM_Raytracing)->ArgsProduct({{8, 16, 32, 64, 128}, {16, 32, 64}, {1, 2, 4, 6, 8}});
+// Benchmark : Samples, Dimensions, nbThreads
+BENCHMARK(BM_Raytracing)->ArgsProduct({{8, 32, 128, 256, 512}, {16, 32, 64}, {1, 2, 4, 6, 8}});
 
 BENCHMARK_MAIN();
 
