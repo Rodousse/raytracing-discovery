@@ -1,7 +1,9 @@
 project/build**
+build**
 third_party/build**
 third_party/install**
 **.cache**
+**.clangd**
 
 # Prerequisites
 *.d
