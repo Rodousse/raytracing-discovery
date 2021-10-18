@@ -14,6 +14,10 @@ option(BUILD_BENCHMARK "Build benchmark" ON)
 
 include(GenerateExportHeader)
 
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
+include(FetchContent)
+include(FetchImguiTarget)
+
 # Path to use for cmake generated files
 set(GENERATED_DIR "${CMAKE_BINARY_DIR}/generated")
 message(STATUS "Generated files goes in : ${GENERATED_DIR}")
@@ -31,10 +35,14 @@ include_directories("${CMAKE_BINARY_DIR}/include")
 
 ############################## THIRD_PARTY ###########################
 
+find_package(OpenGL REQUIRED)
 find_package(Eigen3 REQUIRED)
 find_package(Stbipp REQUIRED)
 find_package(Assimp REQUIRED)
 find_package(OpenMP REQUIRED)
+find_package(GLEW REQUIRED)
+find_package(glfw3 REQUIRED)
+fetch_imgui_target()
 
 
 ############################## SOURCES ###############################
