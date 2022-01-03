@@ -28,7 +28,7 @@ set(ENGINE_HEADERS
     engine/tonemapping/reinhard.hpp)
 
 
-add_library(engine SHARED ${ENGINE_SRC} ${ENGINE_HEADERS})
+add_library(engine ${ENGINE_SRC} ${ENGINE_HEADERS})
 
 
 generate_export_header(engine

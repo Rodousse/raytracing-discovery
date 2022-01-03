@@ -17,7 +17,7 @@ include (ExternalProject)
 if(BUILD_EIGEN)
     ExternalProject_Add(eigen
         GIT_REPOSITORY "https://gitlab.com/libeigen/eigen.git"
-        GIT_TAG "3.3.7"
+        GIT_TAG "3.4.0"
         BUILD_IN_SOURCE 0
         BUILD_ALWAYS 0
         INSTALL_DIR "${CMAKE_INSTALL_PREFIX}"
@@ -39,7 +39,7 @@ endif()
 if(BUILD_STBIPP)
     ExternalProject_Add(stbipp
         GIT_REPOSITORY "https://github.com/Rodousse/stbipp.git"
-        GIT_TAG "origin/dev/cleanSharedInstall"
+        GIT_TAG "develop"
         BUILD_IN_SOURCE 0
         BUILD_ALWAYS 0
         INSTALL_DIR "${CMAKE_INSTALL_PREFIX}"
