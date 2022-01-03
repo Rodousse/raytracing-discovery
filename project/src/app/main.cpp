@@ -77,8 +77,8 @@ int main(int argc, char* argv[])
     scene.cameras.front()->setRenderDimensions(width, height);
     stbipp::Image frame(width, height, stbipp::Color4f{0.0f});
     stbipp::Image frameDisplayed(width, height, stbipp::Color4f{0.0f});
-    std::size_t sampleCount = 0;
-    float keyVal = 0.18f;
+    int sampleCount = 0;
+    float keyVal = 0.72f;
     while(!glfwWindowShouldClose(window))
     {
         // update other events like input handling
@@ -133,16 +133,35 @@ int main(int argc, char* argv[])
         ImGui_ImplGlfw_NewFrame();
 
         ImGui::NewFrame();
-        ImGui::Begin("Parameters");
+
         {
-            ImGui::Text("Application average %.3f ms/frame (%.1f FPS)",
-                        1000.0f / ImGui::GetIO().Framerate,
-                        ImGui::GetIO().Framerate);
-            ImGui::SliderFloat("Reinhard key value", &keyVal, 0.0f, 1.0f);
+            int winWidth, winHeight;
+            glfwGetWindowSize(window, &winWidth, &winHeight);
+            ImGui::SetNextWindowPos(ImVec2(0.0, 0.0));
+            ImGui::SetNextWindowSize(ImVec2(winWidth, winHeight));
         }
-        ImGui::End();
-        ImGui::Begin("OpenGL Texture Text");
-        ImGui::Image((void*)(intptr_t)textureID, ImVec2(width, height));
+        ImGui::Begin("MainWindow",
+                     NULL,
+                     ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove |
+                       ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_AlwaysAutoResize);
+        {
+            ImGui::BeginChild("Parameters", ImVec2(600.0f, 0.0f), true);
+            {
+                ImGui::Text("Application average %.3f ms/frame (%.1f FPS)",
+                            1000.0f / ImGui::GetIO().Framerate,
+                            ImGui::GetIO().Framerate);
+                ImGui::SliderFloat("Reinhard key value", &keyVal, 0.0f, 1.0f);
+                ImGui::Text("Samples %d", sampleCount);
+            }
+            ImGui::EndChild();
+            ImGui::SameLine();
+
+            ImGui::BeginChild("OpenGL Texture Text", ImVec2(0, 0), true);
+            {
+                ImGui::Image((void*)(intptr_t)textureID, ImVec2(width, height));
+            }
+            ImGui::EndChild();
+        }
         ImGui::End();
 
         ImGui::Render();
