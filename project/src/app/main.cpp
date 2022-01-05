@@ -143,8 +143,23 @@ int main(int argc, char* argv[])
         ImGui::Begin("MainWindow",
                      NULL,
                      ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove |
-                       ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_AlwaysAutoResize);
+                       ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_AlwaysAutoResize);
         {
+            if(ImGui::BeginMenuBar())
+            {
+                if(ImGui::BeginMenu("File"))
+                {
+                    if(ImGui::MenuItem("Save Rendering"))
+                    {
+                        if(!stbipp::saveImage("result.jpg", frameDisplayed, stbipp::ImageSaveFormat::RGB))
+                        {
+                            std::cerr << "Could not save the result render\n";
+                        }
+                    }
+                    ImGui::EndMenu();
+                }
+                ImGui::EndMenuBar();
+            }
             ImGui::BeginChild("Parameters", ImVec2(600.0f, 0.0f), true);
             {
                 ImGui::Text("Application average %.3f ms/frame (%.1f FPS)",
