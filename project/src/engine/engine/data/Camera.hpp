@@ -49,7 +49,7 @@ class ENGINE_API Camera
     Camera& operator=(Camera&&) = default;
     virtual ~Camera() = default;
 
-    virtual const Ray generateRay(const Eigen::Vector2i& pos) const = 0;
+    [[nodiscard]] virtual Ray generateRay(const Eigen::Vector2i& pos) const = 0;
 
     /********************************* Setter / Getter ***************************************/
 
@@ -59,24 +59,24 @@ class ENGINE_API Camera
     void setUp(const Vector3& up);
     const Vector3& up() const;
 
-    void setForward(const Vector3 forward);
+    void setForward(const Vector3& forward);
     const Vector3& forward() const;
 
     virtual void setNearPlaneDistance(float dist);
-    const float& nearPlaneDistance() const;
+    float nearPlaneDistance() const;
 
     void setFarPlaneDistance(float dist);
-    const float& farPlaneDistance() const;
+    float farPlaneDistance() const;
 
     void setRenderDimensions(unsigned int width, unsigned int height);
     const Eigen::Vector2i renderDimensions() const;
 
     // Set the dimensions of the rendered image in pixels
     void setWidthRenderDimensions(unsigned int width);
-    const unsigned int& widthRenderDimensions() const;
+    unsigned int widthRenderDimensions() const;
 
     void setHeightRenderDimensions(unsigned int height);
-    const unsigned int& heightRenderDimensions() const;
+    unsigned int heightRenderDimensions() const;
 };
 
 } // namespace engine

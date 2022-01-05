@@ -42,4 +42,12 @@ target_include_directories(engine
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
     $<BUILD_INTERFACE:${GENERATED_DIR}>)
 target_link_libraries(engine PUBLIC Stbipp::Stbipp Eigen3::Eigen PRIVATE OpenMP::OpenMP_CXX assimp::assimp)
-target_compile_definitions(engine PUBLIC ENGINE_SHARED _USE_MATH_DEFINES _ENABLE_EXTENDED_ALIGNED_STORAGE PRIVATE ENGINE_EXPORT)
+target_compile_definitions(engine PUBLIC $<$<NOT:$<BOOL:${BUILD_SHARED_LIBS}>>:ENGINE_STATIC_DEFINE> _USE_MATH_DEFINES _ENABLE_EXTENDED_ALIGNED_STORAGE PRIVATE ENGINE_EXPORT)
+
+target_compile_options(engine PRIVATE
+     $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:AppleClang>,$<CXX_COMPILER_ID:GNU>>:
+          -Wall -Wextra -Wshadow -Wnon-virtual-dtor -pedantic -Wold-style-cast -Wunused -Woverloaded-virtual>
+     $<$<CXX_COMPILER_ID:GNU>:
+          -Wduplicated-cond -Wduplicated-branches -Wnull-dereference -Wuseless-cast>
+     $<$<CXX_COMPILER_ID:MSVC>:
+          /W4 /w14265 /w14640 /w14826 /w14928>)

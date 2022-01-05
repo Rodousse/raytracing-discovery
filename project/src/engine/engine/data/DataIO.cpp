@@ -7,20 +7,24 @@
 #include <assimp/postprocess.h>
 #include <assimp/scene.h>
 #include <exception>
+#include <iostream>
+#include <optional>
 #include <unordered_map>
 
 namespace engine
 {
 namespace IO
 {
-bool loadScene(const std::string& path, Scene& scene)
+std::optional<Scene> loadScene(const std::filesystem::path& path)
 {
+    Scene scene{};
     Assimp::Importer importer{};
-    const auto* aiScene = importer.ReadFile(path.c_str(), aiProcess_Triangulate | aiProcess_PreTransformVertices);
+    const auto* aiScene = importer.ReadFile(path.native(), aiProcess_Triangulate | aiProcess_PreTransformVertices);
 
     if(!aiScene)
     {
-        throw std::runtime_error(std::string(__func__) + " : Could not load the file " + path);
+        std::cerr << std::string(__func__) + " : Could not load the file " + path.native();
+        return std::nullopt;
     }
 
     std::unordered_map<decltype(aiScene::mNumMaterials), std::shared_ptr<Material>> diffuseMaterials{};
@@ -151,17 +155,17 @@ bool loadScene(const std::string& path, Scene& scene)
         for(std::size_t camIndex = 0; camIndex < aiScene->mNumCameras; ++camIndex)
         {
             const auto* aiCamera = aiScene->mCameras[camIndex];
+            if(!aiCamera)
+            {
+                continue;
+            }
+
             aiNode* cameraNode = aiScene->mRootNode->FindNode(aiCamera->mName);
             aiMatrix4x4 cameraTransform = cameraNode->mTransformation;
             aiMatrix4x4 rotationMatrix = cameraTransform;
             rotationMatrix.a4 = rotationMatrix.b4 = rotationMatrix.c4 = 0.0f;
             rotationMatrix.d4 = 1.0f;
             std::shared_ptr<Camera> camera;
-
-            if(!aiCamera)
-            {
-                continue;
-            }
 
             if(aiCamera->mOrthographicWidth == 0.0f)
             {
@@ -186,7 +190,7 @@ bool loadScene(const std::string& path, Scene& scene)
         }
     }
 
-    return true;
+    return std::make_optional(std::move(scene));
 }
 
 } // namespace IO

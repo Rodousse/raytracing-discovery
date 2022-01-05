@@ -16,12 +16,13 @@
 
 int main(int argc, char* argv[])
 {
-    engine::Scene scene{};
+    std::optional<engine::Scene> sceneOptional{};
 
-    if(!engine::IO::loadScene(std::string(RESOURCE_PATH) + "/CornellBoxCubeLighten.fbx", scene))
+    if(!(sceneOptional = engine::IO::loadScene(std::string(RESOURCE_PATH) + "/CornellBoxCubeLighten.fbx")))
     {
         throw std::runtime_error(std::string(__func__) + ": Could not load the given scene!");
     }
+    auto& scene = sceneOptional.value();
     std::cout << "Scene loaded successfully" << std::endl;
 
     if(!glfwInit())
@@ -79,6 +80,7 @@ int main(int argc, char* argv[])
     stbipp::Image frameDisplayed(width, height, stbipp::Color4f{0.0f});
     int sampleCount = 0;
     float keyVal = 0.72f;
+
     while(!glfwWindowShouldClose(window))
     {
         // update other events like input handling

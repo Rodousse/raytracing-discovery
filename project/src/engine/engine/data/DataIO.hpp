@@ -2,7 +2,9 @@
 #include "EngineSymbols.h"
 #include "engine/data/Scene.hpp"
 
+#include <filesystem>
 #include <list>
+#include <optional>
 #include <string>
 
 namespace engine
@@ -15,7 +17,7 @@ namespace IO
  * @param[out] scene Loaded scene from file
  * @return true if everything went well
  */
-ENGINE_API bool loadScene(const std::string& path, Scene& scene);
+ENGINE_API std::optional<Scene> loadScene(const std::filesystem::path& path);
 
 } // namespace IO
 } // namespace engine

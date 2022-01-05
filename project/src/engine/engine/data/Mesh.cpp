@@ -2,17 +2,6 @@
 
 namespace engine
 {
-Mesh::Mesh(Mesh&& other) noexcept
-{
-    moveIntoThis(std::move(other));
-}
-
-Mesh& Mesh::operator=(Mesh&& other) noexcept
-{
-    moveIntoThis(std::move(other));
-    return *this;
-}
-
 void Mesh::refreshBoundingBox()
 {
     for(const auto& vertex: vertices)
@@ -22,16 +11,6 @@ void Mesh::refreshBoundingBox()
         aabb.min = min;
         aabb.max = max;
     }
-}
-
-void Mesh::moveIntoThis(Mesh&& other) noexcept
-{
-    vertices = std::move(other.vertices);
-    faces = std::move(other.faces);
-    name = std::move(other.name);
-    path = std::move(other.path);
-    hasVertexNormals = other.hasVertexNormals;
-    aabb = other.aabb;
 }
 
 } // namespace engine

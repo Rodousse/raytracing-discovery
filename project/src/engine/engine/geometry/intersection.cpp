@@ -149,8 +149,8 @@ OrderedRayMeshIntersections findRayLightsIntersections(const Ray& r, const Scene
     OrderedRayMeshIntersections resultVal{};
     for(const auto& candidate: candidates)
     {
-        const auto intersection = findRayMeshIntersections(r, *candidate);
-        resultVal.insert(intersection.cbegin(), intersection.cend());
+        auto intersection = findRayMeshIntersections(r, *candidate);
+        resultVal.merge(intersection);
     }
 
     return resultVal;
@@ -198,8 +198,8 @@ OrderedRayMeshIntersections findRaySceneIntersections(const Ray& r, const Scene&
     OrderedRayMeshIntersections resultVal{};
     for(const auto& candidate: candidates)
     {
-        const auto intersection = findRayMeshIntersections(r, *candidate);
-        resultVal.insert(intersection.cbegin(), intersection.cend());
+        auto intersection = findRayMeshIntersections(r, *candidate);
+        resultVal.merge(intersection);
     }
 
     return resultVal;

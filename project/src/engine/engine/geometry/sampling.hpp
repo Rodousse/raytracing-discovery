@@ -17,7 +17,7 @@ class ENGINE_API UniformSampler
     std::uniform_real_distribution<Floating> m_distribution;
 };
 
-ENGINE_API Vector3 generateRandomUniformHemisphereRayDir(const Vector3& normal, UniformSampler& sampler);
+ENGINE_API [[nodiscard]] Vector3 generateRandomUniformHemisphereRayDir(const Vector3& normal, UniformSampler& sampler);
 
 } // namespace sampling
 } // namespace engine

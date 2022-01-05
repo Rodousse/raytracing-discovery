@@ -18,7 +18,7 @@ void PerspectiveCamera::resizeWorldDimensions()
     m_widthWorld = m_heightWorld * widthRenderDimensions() / heightRenderDimensions();
 }
 
-const Ray PerspectiveCamera::generateRay(const Eigen::Vector2i& pixelPos) const
+Ray PerspectiveCamera::generateRay(const Eigen::Vector2i& pixelPos) const
 {
     // camera space position
     Vector2 cameraCoord = -(pixelPos.cast<Floating>() - (renderDimensions().cast<Floating>() / 2.0f))

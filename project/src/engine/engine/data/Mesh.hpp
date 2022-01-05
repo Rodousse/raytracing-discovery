@@ -54,13 +54,6 @@ struct ENGINE_API Face
  */
 struct ENGINE_API Mesh
 {
-    Mesh() = default;
-    Mesh(const Mesh& other) = default;
-    Mesh(Mesh&& other) noexcept;
-    Mesh& operator=(const Mesh& other) = default;
-    Mesh& operator=(Mesh&& other) noexcept;
-    ~Mesh() = default;
-
     std::vector<Vertex> vertices{};
     std::vector<Face> faces{};
     std::string name{};
@@ -70,9 +63,6 @@ struct ENGINE_API Mesh
     bool hasVertexNormals{false};
 
     void refreshBoundingBox();
-
-  private:
-    void moveIntoThis(Mesh&& other) noexcept;
 };
 
 } // namespace engine

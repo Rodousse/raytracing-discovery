@@ -11,9 +11,9 @@ namespace engine
 {
 struct ENGINE_API RayTriangleIntersection
 {
-    bool hit{false};
     Vector3 position{0.0, 0.0, 0.0};
     Vector2 uv{0.0, 0.0};
+    bool hit{false};
 };
 
 struct ENGINE_API RayMeshIntersection
@@ -42,7 +42,9 @@ namespace geometry
  * @param[out] intersectedPoint The position of the intersection if applicable
  * @return True if they intersect
  */
-ENGINE_API RayTriangleIntersection isRayIntersectingFace(const Ray& r, const Mesh& mesh, const FaceIndex faceIdx);
+ENGINE_API [[nodiscard]] RayTriangleIntersection isRayIntersectingFace(const Ray& r,
+                                                                       const Mesh& mesh,
+                                                                       const FaceIndex faceIdx);
 
 /**
  * @brief Know if ray intersects the given axis aligned bounding box, using the Fast Ray-Box Intersection algorithm :
@@ -52,19 +54,19 @@ ENGINE_API RayTriangleIntersection isRayIntersectingFace(const Ray& r, const Mes
  * @param[out] intersectedPoint The position of the intersection if applicable
  * @return True if they intersect
  */
-ENGINE_API RayAABBIntersection isRayIntersectingBoundingBox(const Ray& r, const AABoundingBox& aabb);
+ENGINE_API [[nodiscard]] RayAABBIntersection isRayIntersectingBoundingBox(const Ray& r, const AABoundingBox& aabb);
 
-ENGINE_API OrderedRayMeshIntersections findRayLightsIntersections(const Ray& r, const Scene& scene);
+ENGINE_API [[nodiscard]] OrderedRayMeshIntersections findRayLightsIntersections(const Ray& r, const Scene& scene);
 
-ENGINE_API RayMeshIntersection findClosestRayLightsIntersections(const Ray& r, const Scene& scene);
+ENGINE_API [[nodiscard]] RayMeshIntersection findClosestRayLightsIntersections(const Ray& r, const Scene& scene);
 
-ENGINE_API OrderedRayMeshIntersections findRayMeshIntersections(const Ray& r, const Mesh& mesh);
+ENGINE_API [[nodiscard]] OrderedRayMeshIntersections findRayMeshIntersections(const Ray& r, const Mesh& mesh);
 
-ENGINE_API RayMeshIntersection findClosestRayMeshIntersections(const Ray& r, const Mesh& mesh);
+ENGINE_API [[nodiscard]] RayMeshIntersection findClosestRayMeshIntersections(const Ray& r, const Mesh& mesh);
 
-ENGINE_API OrderedRayMeshIntersections findRaySceneIntersections(const Ray& r, const Scene& scene);
+ENGINE_API [[nodiscard]] OrderedRayMeshIntersections findRaySceneIntersections(const Ray& r, const Scene& scene);
 
-ENGINE_API RayMeshIntersection findClosestRaySceneIntersections(const Ray& r, const Scene& scene);
+ENGINE_API [[nodiscard]] RayMeshIntersection findClosestRaySceneIntersections(const Ray& r, const Scene& scene);
 
 } // namespace geometry
 } // namespace engine

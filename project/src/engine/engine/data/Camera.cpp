@@ -12,10 +12,10 @@ Camera::Camera():
   m_position(Vector3::Zero()),
   m_nearPlaneDistance(0.1f),
   m_farPlaneDistance(100.0f),
-  m_widthRender(640),
-  m_heightRender(480),
   m_camToWorldMat(Matrix4::Identity()),
-  m_worldToCamMat(Matrix4::Identity())
+  m_worldToCamMat(Matrix4::Identity()),
+  m_widthRender(640),
+  m_heightRender(480)
 {
     refreshMatrices();
 }
@@ -66,7 +66,7 @@ const Vector3& Camera::up() const
     return m_upWorld;
 }
 
-void Camera::setForward(const Vector3 forward)
+void Camera::setForward(const Vector3& forward)
 {
     m_forward = forward;
     refreshMatrices();
@@ -87,7 +87,7 @@ void Camera::setNearPlaneDistance(float dist)
     m_nearPlaneDistance = dist;
 }
 
-const float& Camera::nearPlaneDistance() const
+float Camera::nearPlaneDistance() const
 {
     return m_nearPlaneDistance;
 }
@@ -103,7 +103,7 @@ void Camera::setFarPlaneDistance(float dist)
     m_farPlaneDistance = dist;
 }
 
-const float& Camera::farPlaneDistance() const
+float Camera::farPlaneDistance() const
 {
     return m_farPlaneDistance;
 }
@@ -126,7 +126,7 @@ void Camera::setWidthRenderDimensions(unsigned int width)
     resizeWorldDimensions();
 }
 
-const unsigned int& Camera::widthRenderDimensions() const
+unsigned int Camera::widthRenderDimensions() const
 {
     return m_widthRender;
 }
@@ -137,7 +137,7 @@ void Camera::setHeightRenderDimensions(unsigned int height)
     resizeWorldDimensions();
 }
 
-const unsigned int& Camera::heightRenderDimensions() const
+unsigned int Camera::heightRenderDimensions() const
 {
     return m_heightRender;
 }
