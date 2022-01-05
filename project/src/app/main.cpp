@@ -172,12 +172,7 @@ int main(int argc, char* argv[])
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();
     ImGui::DestroyContext();
-
-    //    if(!stbipp::saveImage("resultToneMapped.jpg", result, stbipp::ImageSaveFormat::RGB))
-    //    {
-    //        std::cerr << "Could not save the result render\n";
-    //        return 1;
-    //    }
+    glDeleteTextures(1, &textureID);
 
     glfwDestroyWindow(window);
     glfwTerminate();
