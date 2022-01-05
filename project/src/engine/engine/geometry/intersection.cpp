@@ -134,7 +134,7 @@ RayAABBIntersection isRayIntersectingBoundingBox(const Ray& r, const AABoundingB
     return returnVal; /* ray hits box */
 }
 
-OrderedRayMeshIntersections findRayLightsIntersections(const Ray& r, const Scene& scene)
+RayMeshIntersections findRayLightsIntersections(const Ray& r, const Scene& scene)
 {
     std::vector<Mesh*> candidates{};
     for(const auto& mesh: scene.emissiveMeshes)
@@ -146,11 +146,11 @@ OrderedRayMeshIntersections findRayLightsIntersections(const Ray& r, const Scene
         }
     }
 
-    OrderedRayMeshIntersections resultVal{};
+    RayMeshIntersections resultVal{};
     for(const auto& candidate: candidates)
     {
         auto intersection = findRayMeshIntersections(r, *candidate);
-        resultVal.merge(intersection);
+        resultVal.splice(resultVal.end(), intersection);
     }
 
     return resultVal;
@@ -183,7 +183,7 @@ RayMeshIntersection findClosestRayLightsIntersections(const Ray& r, const Scene&
     return resultVal;
 }
 
-OrderedRayMeshIntersections findRaySceneIntersections(const Ray& r, const Scene& scene)
+RayMeshIntersections findRaySceneIntersections(const Ray& r, const Scene& scene)
 {
     std::vector<Mesh*> candidates{};
     for(const auto& mesh: scene.meshes)
@@ -195,11 +195,11 @@ OrderedRayMeshIntersections findRaySceneIntersections(const Ray& r, const Scene&
         }
     }
 
-    OrderedRayMeshIntersections resultVal{};
+    RayMeshIntersections resultVal{};
     for(const auto& candidate: candidates)
     {
         auto intersection = findRayMeshIntersections(r, *candidate);
-        resultVal.merge(intersection);
+        resultVal.splice(resultVal.end(), intersection);
     }
 
     return resultVal;
@@ -232,16 +232,15 @@ RayMeshIntersection findClosestRaySceneIntersections(const Ray& r, const Scene& 
 
     return resultVal;
 }
-OrderedRayMeshIntersections findRayMeshIntersections(const Ray& r, const Mesh& mesh)
+RayMeshIntersections findRayMeshIntersections(const Ray& r, const Mesh& mesh)
 {
-    OrderedRayMeshIntersections returnVal{};
+    RayMeshIntersections returnVal{};
     for(FaceIndex faceIdx = 0; faceIdx < mesh.faces.size(); ++faceIdx)
     {
         auto faceInter = isRayIntersectingFace(r, mesh, faceIdx);
         if(faceInter.hit)
         {
-            const Floating dist = (faceInter.position - r.origin).norm();
-            auto& intersection = returnVal.insert({dist, RayMeshIntersection{}}).first->second;
+            auto& intersection = returnVal.emplace_back();
             intersection.faceIntersection = std::move(faceInter);
             intersection.mesh = &mesh;
             intersection.faceIdx = faceIdx;

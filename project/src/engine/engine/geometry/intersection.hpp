@@ -5,6 +5,7 @@
 #include "engine/data/Scene.hpp"
 #include "engine/geometry/Ray.hpp"
 
+#include <list>
 #include <map>
 
 namespace engine
@@ -23,7 +24,7 @@ struct ENGINE_API RayMeshIntersection
     RayTriangleIntersection faceIntersection{};
 };
 
-using OrderedRayMeshIntersections = std::map<Floating, RayMeshIntersection>;
+using RayMeshIntersections = std::list<RayMeshIntersection>;
 
 struct ENGINE_API RayAABBIntersection
 {
@@ -56,15 +57,15 @@ ENGINE_API [[nodiscard]] RayTriangleIntersection isRayIntersectingFace(const Ray
  */
 ENGINE_API [[nodiscard]] RayAABBIntersection isRayIntersectingBoundingBox(const Ray& r, const AABoundingBox& aabb);
 
-ENGINE_API [[nodiscard]] OrderedRayMeshIntersections findRayLightsIntersections(const Ray& r, const Scene& scene);
+ENGINE_API [[nodiscard]] RayMeshIntersections findRayLightsIntersections(const Ray& r, const Scene& scene);
 
 ENGINE_API [[nodiscard]] RayMeshIntersection findClosestRayLightsIntersections(const Ray& r, const Scene& scene);
 
-ENGINE_API [[nodiscard]] OrderedRayMeshIntersections findRayMeshIntersections(const Ray& r, const Mesh& mesh);
+ENGINE_API [[nodiscard]] RayMeshIntersections findRayMeshIntersections(const Ray& r, const Mesh& mesh);
 
 ENGINE_API [[nodiscard]] RayMeshIntersection findClosestRayMeshIntersections(const Ray& r, const Mesh& mesh);
 
-ENGINE_API [[nodiscard]] OrderedRayMeshIntersections findRaySceneIntersections(const Ray& r, const Scene& scene);
+ENGINE_API [[nodiscard]] RayMeshIntersections findRaySceneIntersections(const Ray& r, const Scene& scene);
 
 ENGINE_API [[nodiscard]] RayMeshIntersection findClosestRaySceneIntersections(const Ray& r, const Scene& scene);
 
