@@ -88,25 +88,8 @@ Vector3 castRay(const Ray& r, const Scene& scene, RenderInformations& renderPara
     const auto* hitMesh = meshIntersections.mesh;
     Vector3 normal = hitMesh->faces[meshIntersections.faceIdx].normal;
 
-    //    // Strategy to get smooth surfaces without surface subdivision
-    //    const auto& face = hitMesh->faces[meshIntersections.faceIdx];
-    //    const auto& nv0 = hitMesh->vertices[face.indices[0]].normal;
-    //    const auto& nv1 = hitMesh->vertices[face.indices[1]].normal;
-    //    const auto& nv2 = hitMesh->vertices[face.indices[2]].normal;
-    //    const auto& uv = meshIntersections.faceIntersection.uv;
-    //    const auto& p0 = hitMesh->vertices[face.indices[0]].pos;
-    //    const auto& p1 = hitMesh->vertices[face.indices[1]].pos;
-    //    const auto& p2 = hitMesh->vertices[face.indices[2]].pos;
-    //    const auto r0 = p0 + (p0 - meshIntersections.faceIntersection.position).dot(nv0) * nv0;
-    //    const auto r1 = p1 + (p1 - meshIntersections.faceIntersection.position).dot(nv1) * nv1;
-    //    const auto r2 = p2 + (p2 - meshIntersections.faceIntersection.position).dot(nv2) * nv2;
-    //
-    //    normal = (1.0 - uv.x() - uv.y()) * nv0 + (uv.x() * nv1) + (uv.y() * nv2);
-    // normal.normalize();
-
     Ray newRay{};
     newRay.dir = sampling::generateRandomUniformHemisphereRayDir(normal, renderParams.sampler);
-    // newRay.origin = (1 - uv.x() - uv.y()) * r0 + uv.x() * r1 + uv.y() * r2;
     newRay.origin = meshIntersections.faceIntersection.position + normal * 1e-4;
     renderParams.depth++;
     const auto radiance = castRay(newRay, scene, renderParams);
