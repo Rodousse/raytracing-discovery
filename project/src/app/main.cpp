@@ -36,7 +36,7 @@ int main(int argc, char* argv[])
         return 1;
     }
 
-    auto* window = glfwCreateWindow(1920, 1080, "Test", nullptr, nullptr);
+    auto* window = glfwCreateWindow(1920, 1080, "Raytracing-Discovery", nullptr, nullptr);
 
     if(!window)
     {
