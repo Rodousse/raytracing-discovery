@@ -104,23 +104,17 @@ int main(int argc, char* argv[])
             // result = renderBuffer->result();
             result = renderBuffer->result();
         }
-        for(int y = 0; y < result.height(); ++y)
+        for(auto& color: result)
         {
-            for(int x = 0; x < result.width(); ++x)
-            {
-                result(x, y) /= renderBuffer->renderedSamples();
-            }
+            color /= renderBuffer->renderedSamples();
         }
         tone::reinhard(result, keyVal);
 
-        for(int y = 0; y < result.height(); ++y)
+        for(auto& color: result)
         {
-            for(int x = 0; x < result.width(); ++x)
+            for(auto& chan: color)
             {
-                for(auto& chan: result(x, y))
-                {
-                    chan = std::min(chan, 1.0f);
-                }
+                chan = std::min(chan, 1.0f);
             }
         }
         glBindTexture(GL_TEXTURE_2D, textureID);
