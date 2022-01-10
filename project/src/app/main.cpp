@@ -1,6 +1,7 @@
+#include "engine/Renderer.hpp"
+
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
-#include <algorithm>
 #include <defines.h>
 #include <engine/data/DataIO.hpp>
 #include <engine/data/PerspectiveCamera.hpp>
@@ -16,6 +17,8 @@
 
 int main(int argc, char* argv[])
 {
+    int width = 1024;
+    int height = 1024;
     std::optional<engine::Scene> sceneOptional{};
 
     if(!(sceneOptional = engine::IO::loadScene(std::string(RESOURCE_PATH) + "/CornellBoxCubeLighten.fbx")))
@@ -23,6 +26,8 @@ int main(int argc, char* argv[])
         throw std::runtime_error(std::string(__func__) + ": Could not load the given scene!");
     }
     auto& scene = sceneOptional.value();
+    scene.cameras.front()->setRenderDimensions(width, height);
+    scene.backgroundColor = Vector3::Ones() * 0.0;
     std::cout << "Scene loaded successfully" << std::endl;
 
     if(!glfwInit())
@@ -30,8 +35,6 @@ int main(int argc, char* argv[])
         std::cerr << "ERROR: could not start GLFW" << std::endl;
         return 1;
     }
-    int width = 1024;
-    int height = 1024;
 
     auto* window = glfwCreateWindow(1920, 1080, "Test", nullptr, nullptr);
 
@@ -75,12 +78,18 @@ int main(int argc, char* argv[])
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_LOD, -1000);
     }
     glBindTexture(GL_TEXTURE_2D, 0);
-    scene.cameras.front()->setRenderDimensions(width, height);
-    stbipp::Image frame(width, height, stbipp::Color4f{0.0f});
-    stbipp::Image frameDisplayed(width, height, stbipp::Color4f{0.0f});
+
     int sampleCount = 0;
     float keyVal = 0.72f;
 
+    engine::Renderer renderer;
+    engine::RenderProperties renderParams;
+    renderParams.maxDepth = 3;
+    renderParams.samples = 128;
+    renderer.setRenderProperties(renderParams);
+    renderer.setScene(scene);
+    auto renderBuffer = renderer.createRenderBuffer(scene.cameras.front());
+    stbipp::Image result(renderBuffer->result().width(), renderBuffer->result().height());
     while(!glfwWindowShouldClose(window))
     {
         // update other events like input handling
@@ -88,32 +97,29 @@ int main(int argc, char* argv[])
 
         glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
-        scene.backgroundColor = Vector3::Ones() * 0.0;
-        const int maxDepth = 3;
-        const int samples = 1;
-        auto result = engine::renderScene(scene, 0, samples, maxDepth);
-        sampleCount++;
-        for(int x = 0; x < result.width(); ++x)
+
+        renderer.setRenderProperties(renderParams);
         {
-            for(int y = 0; y < result.height(); ++y)
+            std::shared_lock<std::shared_mutex> lock(renderBuffer->m_readMutex);
+            // result = renderBuffer->result();
+            result = renderBuffer->result();
+        }
+        for(int y = 0; y < result.height(); ++y)
+        {
+            for(int x = 0; x < result.width(); ++x)
             {
-                frame(x, y) += result(x, y);
-                frameDisplayed(x, y) = frame(x, y);
-                for(auto& chan: frameDisplayed(x, y))
-                {
-                    chan /= sampleCount;
-                }
+                result(x, y) /= renderBuffer->renderedSamples();
             }
         }
-        tone::reinhard(frameDisplayed, keyVal);
+        tone::reinhard(result, keyVal);
 
-        for(int x = 0; x < result.width(); ++x)
+        for(int y = 0; y < result.height(); ++y)
         {
-            for(int y = 0; y < result.height(); ++y)
+            for(int x = 0; x < result.width(); ++x)
             {
-                for(auto& chan: frameDisplayed(x, y))
+                for(auto& chan: result(x, y))
                 {
-                    chan = std::min(chan, .999999990f);
+                    chan = std::min(chan, 1.0f);
                 }
             }
         }
@@ -127,7 +133,7 @@ int main(int argc, char* argv[])
                          0,
                          GL_RGBA,
                          GL_UNSIGNED_BYTE,
-                         frameDisplayed.castData<stbipp::Color4uc>().data());
+                         result.castData<stbipp::Color4uc>().data());
         }
         glBindTexture(GL_TEXTURE_2D, 0);
         // Start the Dear ImGui frame
@@ -135,7 +141,6 @@ int main(int argc, char* argv[])
         ImGui_ImplGlfw_NewFrame();
 
         ImGui::NewFrame();
-
         {
             int winWidth, winHeight;
             glfwGetWindowSize(window, &winWidth, &winHeight);
@@ -153,7 +158,7 @@ int main(int argc, char* argv[])
                 {
                     if(ImGui::MenuItem("Save Rendering"))
                     {
-                        if(!stbipp::saveImage("result.jpg", frameDisplayed, stbipp::ImageSaveFormat::RGB))
+                        if(!stbipp::saveImage("result.jpg", result, stbipp::ImageSaveFormat::RGB))
                         {
                             std::cerr << "Could not save the result render\n";
                         }
@@ -168,14 +173,22 @@ int main(int argc, char* argv[])
                             1000.0f / ImGui::GetIO().Framerate,
                             ImGui::GetIO().Framerate);
                 ImGui::SliderFloat("Reinhard key value", &keyVal, 0.0f, 1.0f);
-                ImGui::Text("Samples %d", sampleCount);
+                ImGui::Text("Samples %d", renderBuffer->renderedSamples());
+                {
+                    static int samples{static_cast<int>(renderParams.samples)},
+                      maxDepth{static_cast<int>(renderParams.maxDepth)};
+                    ImGui::DragInt("Samples", &samples);
+                    ImGui::DragInt("MaxDepth", &maxDepth);
+                    renderParams.samples = samples;
+                    renderParams.maxDepth = maxDepth;
+                }
             }
             ImGui::EndChild();
             ImGui::SameLine();
 
             ImGui::BeginChild("OpenGL Texture Text", ImVec2(0, 0), true);
             {
-                ImGui::Image((void*)(intptr_t)textureID, ImVec2(width, height));
+                ImGui::Image((void*)(intptr_t)textureID, ImVec2(result.width(), result.height()));
             }
             ImGui::EndChild();
         }

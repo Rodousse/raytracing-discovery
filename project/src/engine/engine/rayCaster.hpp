@@ -9,7 +9,7 @@
 
 namespace engine
 {
-struct ENGINE_API RenderInformations
+struct ENGINE_API CasterParameters
 {
     unsigned int depth{0};
     unsigned int maxDepth;
@@ -17,14 +17,25 @@ struct ENGINE_API RenderInformations
     bool isLight{false};
 };
 
+struct RenderProperties
+{
+    unsigned int maxDepth;
+    unsigned int samples;
+};
+
 ENGINE_API [[nodiscard]] stbipp::Image renderScene(const Scene& scene,
                                                    std::shared_ptr<Camera> camera,
-                                                   unsigned int samples,
-                                                   unsigned int maxDepth);
+                                                   const RenderProperties& params);
+
 ENGINE_API [[nodiscard]] stbipp::Image renderScene(const Scene& scene,
                                                    unsigned int cameraIdx,
-                                                   unsigned int samples,
-                                                   unsigned int maxDepth);
-// ENGINE_API Vector3 castRay(const Ray& r, const Scene& scene, unsigned int depth, unsigned int maxDepth, bool&);
-ENGINE_API [[nodiscard]] Vector3 castRay(const Ray& r, const Scene& scene, RenderInformations& renderParams);
+                                                   const RenderProperties& params);
+
+ENGINE_API void renderSceneRect(const std::shared_ptr<Camera>& camera,
+                                const Scene& scene,
+                                const RenderProperties& params,
+                                const Rect& rect,
+                                stbipp::Image& target);
+
+ENGINE_API [[nodiscard]] Vector3 castRay(const Ray& r, const Scene& scene, CasterParameters& renderParams);
 } // namespace engine

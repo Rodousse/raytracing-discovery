@@ -10,52 +10,49 @@
 
 namespace engine
 {
-stbipp::Image renderScene(const Scene& scene, unsigned int cameraIdx, unsigned int samples, unsigned int maxDepth)
+stbipp::Image renderScene(const Scene& scene, unsigned int cameraIdx, const RenderProperties& params)
 {
     if(cameraIdx >= scene.cameras.size())
     {
         throw std::out_of_range(std::string(__func__) + ": Trying to render with camera index out of range");
     }
-    return renderScene(scene, scene.cameras[cameraIdx], samples, maxDepth);
+    return renderScene(scene, scene.cameras[cameraIdx], params);
 }
 
-stbipp::Image renderScene(const Scene& scene,
-                          std::shared_ptr<Camera> camera,
-                          unsigned int samples,
-                          unsigned int maxDepth)
+stbipp::Image renderScene(const Scene& scene, std::shared_ptr<Camera> camera, const RenderProperties& params)
 {
     std::vector<Ray> rays{};
     const auto& screenDimensions = camera->renderDimensions();
     stbipp::Image renderTarget(screenDimensions.x(), screenDimensions.y(), stbipp::Color3f(0.0f));
 
     rays.reserve(camera->widthRenderDimensions() * camera->heightRenderDimensions());
-    for(int pixelY = 0; pixelY < screenDimensions[1]; ++pixelY)
+    for(unsigned int pixelY = 0; pixelY < screenDimensions[1]; ++pixelY)
     {
-        for(int pixelX = 0; pixelX < screenDimensions[0]; ++pixelX)
+        for(unsigned int pixelX = 0; pixelX < screenDimensions[0]; ++pixelX)
         {
-            rays.emplace_back(camera->generateRay(Eigen::Vector2i{pixelX, pixelY}));
+            rays.emplace_back(camera->generateRay(Vector2ui{pixelX, pixelY}));
         }
     }
 #pragma omp parallel shared(renderTarget, rays)
     {
-        RenderInformations threadRenderInformations{};
-        threadRenderInformations.maxDepth = maxDepth;
+        CasterParameters threadRenderInformations{};
+        threadRenderInformations.maxDepth = params.maxDepth;
 
 #pragma omp for schedule(dynamic, 1)
-        for(int pixelY = 0; pixelY < screenDimensions[1]; ++pixelY)
+        for(unsigned int pixelY = 0; pixelY < screenDimensions[1]; ++pixelY)
         {
-            for(int pixelX = 0; pixelX < screenDimensions[0]; ++pixelX)
+            for(unsigned int pixelX = 0; pixelX < screenDimensions[0]; ++pixelX)
             {
                 auto& renderInfo = threadRenderInformations;
                 stbipp::Color4f pixelColor{0.0f};
-                for(unsigned int sampleCount = 0; sampleCount < samples; ++sampleCount)
+                for(unsigned int sampleCount = 0; sampleCount < params.samples; ++sampleCount)
                 {
                     renderInfo.depth = 0;
                     renderInfo.isLight = false;
                     const auto sampleColor = castRay(rays[pixelX + pixelY * screenDimensions[0]], scene, renderInfo);
                     pixelColor += stbipp::Color4f(sampleColor.x(), sampleColor.y(), sampleColor.z(), 1.0f);
                 }
-                pixelColor /= stbipp::Color4f(samples);
+                pixelColor /= stbipp::Color4f(params.samples);
                 renderTarget(pixelX, pixelY) = pixelColor;
             }
         }
@@ -64,7 +61,40 @@ stbipp::Image renderScene(const Scene& scene,
     return renderTarget;
 }
 
-Vector3 castRay(const Ray& r, const Scene& scene, RenderInformations& renderParams)
+void renderSceneRect(const std::shared_ptr<Camera>& camera,
+                     const Scene& scene,
+                     const RenderProperties& params,
+                     const Rect& rect,
+                     stbipp::Image& target)
+{
+    std::vector<Ray> rays{};
+
+    rays.reserve(rect.size.x() * rect.size.y());
+    const auto rectEnd = rect.origin + rect.size;
+    for(unsigned int pixelY = rect.origin.y(); pixelY < rectEnd.y(); ++pixelY)
+    {
+        for(unsigned int pixelX = rect.origin.x(); pixelX < rectEnd.x(); ++pixelX)
+        {
+            rays.emplace_back(camera->generateRay(Vector2ui{pixelX, pixelY}));
+        }
+    }
+    CasterParameters renderParams{};
+    renderParams.maxDepth = params.maxDepth;
+    std::size_t rayIndex{0};
+    for(unsigned int pixelY = rect.origin.y(); pixelY < rectEnd.y(); ++pixelY)
+    {
+        for(unsigned int pixelX = rect.origin.x(); pixelX < rectEnd.x(); ++pixelX)
+        {
+            renderParams.depth = 0;
+            renderParams.isLight = false;
+            const auto sampleColor = castRay(rays[rayIndex], scene, renderParams);
+            target(pixelX, pixelY) += stbipp::Color4f(sampleColor.x(), sampleColor.y(), sampleColor.z(), 1.0f);
+            rayIndex++;
+        }
+    }
+}
+
+Vector3 castRay(const Ray& r, const Scene& scene, CasterParameters& renderParams)
 {
     if(renderParams.depth == renderParams.maxDepth)
     {

@@ -114,9 +114,9 @@ void Camera::setRenderDimensions(unsigned int width, unsigned int height)
     setHeightRenderDimensions(height);
 }
 
-const Eigen::Vector2i Camera::renderDimensions() const
+const Vector2ui Camera::renderDimensions() const
 {
-    return Eigen::Vector2i(m_widthRender, m_heightRender);
+    return Vector2ui(m_widthRender, m_heightRender);
 }
 
 // Set the dimensions of the rendered image in pixels

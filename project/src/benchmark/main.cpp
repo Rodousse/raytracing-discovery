@@ -11,11 +11,14 @@ std::optional<engine::Scene> loadBenchScene();
 static void BM_Raytracing(benchmark::State& state)
 {
     auto scene = loadBenchScene();
+    engine::RenderProperties params;
+    params.maxDepth = 3;
     for(auto _: state)
     {
         omp_set_num_threads(state.range(2));
         scene->cameras.front()->setRenderDimensions(state.range(1), state.range(1));
-        const auto result = engine::renderScene(*scene, 0, state.range(0), 3);
+        params.samples = state.range(0);
+        const auto result = engine::renderScene(*scene, 0, params);
     }
 }
 // Benchmark : Samples, Dimensions, nbThreads

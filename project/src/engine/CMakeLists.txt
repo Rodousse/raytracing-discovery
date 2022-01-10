@@ -1,5 +1,7 @@
 set(ENGINE_SRC
     engine/rayCaster.cpp
+    engine/Renderer.cpp
+    engine/RenderBuffer.cpp
     engine/data/Camera.cpp
     engine/data/DataIO.cpp
     engine/data/Light.cpp
@@ -8,11 +10,15 @@ set(ENGINE_SRC
     engine/data/PerspectiveCamera.cpp
     engine/geometry/intersection.cpp
     engine/geometry/sampling.cpp
+    engine/synchronisation/CommandManager.cpp
+    engine/synchronisation/RenderCommand.cpp
     engine/tonemapping/reinhard.cpp)
 
 
 set(ENGINE_HEADERS
     engine/rayCaster.hpp
+    engine/Renderer.hpp
+    engine/RenderBuffer.hpp
     engine/data/Camera.hpp
     engine/data/DataIO.hpp
     engine/data/Light.hpp
@@ -25,6 +31,9 @@ set(ENGINE_HEADERS
     engine/geometry/intersection.hpp
     engine/geometry/Ray.hpp
     engine/geometry/sampling.hpp
+    engine/synchronisation/CommandManager.hpp
+    engine/synchronisation/Command.hpp
+    engine/synchronisation/RenderCommand.hpp
     engine/tonemapping/reinhard.hpp)
 
 

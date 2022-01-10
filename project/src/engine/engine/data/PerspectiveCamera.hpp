@@ -13,7 +13,7 @@ class ENGINE_API PerspectiveCamera : public Camera
   public:
     PerspectiveCamera();
     ~PerspectiveCamera() override = default;
-    [[nodiscard]] Ray generateRay(const Eigen::Vector2i& pixelPos) const override;
+    [[nodiscard]] Ray generateRay(const Vector2ui& pixelPos) const override;
 
     /********************************* Setter / Getter ***************************************/
     void setNearPlaneDistance(float dist) override;

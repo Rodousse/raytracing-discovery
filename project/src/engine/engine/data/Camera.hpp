@@ -49,7 +49,7 @@ class ENGINE_API Camera
     Camera& operator=(Camera&&) = default;
     virtual ~Camera() = default;
 
-    [[nodiscard]] virtual Ray generateRay(const Eigen::Vector2i& pos) const = 0;
+    [[nodiscard]] virtual Ray generateRay(const Vector2ui& pos) const = 0;
 
     /********************************* Setter / Getter ***************************************/
 
@@ -69,7 +69,7 @@ class ENGINE_API Camera
     float farPlaneDistance() const;
 
     void setRenderDimensions(unsigned int width, unsigned int height);
-    const Eigen::Vector2i renderDimensions() const;
+    const Vector2ui renderDimensions() const;
 
     // Set the dimensions of the rendered image in pixels
     void setWidthRenderDimensions(unsigned int width);

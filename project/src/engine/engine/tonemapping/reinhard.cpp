@@ -19,9 +19,9 @@ void reinhard(stbipp::Image& image, Floating scale)
 {
     double logAverageLum{0.0};
     double maxLum{0.0};
-    for(int x = 0; x < image.width(); ++x)
+    for(int y = 0; y < image.height(); ++y)
     {
-        for(int y = 0; y < image.height(); ++y)
+        for(int x = 0; x < image.width(); ++x)
         {
             const auto& col = image(x, y);
             const auto lum = rgbLuminance(Vector3{col.r(), col.g(), col.b()});
@@ -31,9 +31,9 @@ void reinhard(stbipp::Image& image, Floating scale)
     }
     logAverageLum = std::exp(logAverageLum / static_cast<double>(image.width() * image.height()));
     std::cout << logAverageLum;
-    for(int x = 0; x < image.width(); ++x)
+    for(int y = 0; y < image.height(); ++y)
     {
-        for(int y = 0; y < image.height(); ++y)
+        for(int x = 0; x < image.width(); ++x)
         {
             const auto& col = image(x, y);
             const auto lum = rgbLuminance(Vector3{col.r(), col.g(), col.b()});
