@@ -3,9 +3,9 @@
 This project aims at implementing a raytracing approach for photorealistic rendering
 
 
-Ultimate goal(Cycles render) | V0
-:-----------------: | :------------------:
- <img src="./project/resources/CornellBoxSphere.png" width="256"> | <img src="./project/resources/V0.png" width="256"> 
+Ultimate goal(Cycles render) | V0 | Current 
+:-----------------: | :------------------: | :------------------:
+ <img src="./project/resources/CornellBoxSphere.png" width="256"> | <img src="./project/resources/V0.png" width="256"> | <img src="./project/resources/UI.png" width="256">
 
 
 ---
