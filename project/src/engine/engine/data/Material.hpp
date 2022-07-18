@@ -14,10 +14,6 @@ struct Material
     virtual ~Material() = default;
 
     Vector3 diffuseColor{1.0, 1.0, 1.0};
-};
-
-struct EmissiveMaterial : Material
-{
     Vector3 emissiveColor{1.0, 1.0, 1.0};
 };
 

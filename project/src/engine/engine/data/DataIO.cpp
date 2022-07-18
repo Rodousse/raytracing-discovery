@@ -28,7 +28,7 @@ std::optional<Scene> loadScene(const std::filesystem::path& path)
     }
 
     std::unordered_map<decltype(aiScene::mNumMaterials), std::shared_ptr<Material>> diffuseMaterials{};
-    std::unordered_map<decltype(aiScene::mNumMaterials), std::shared_ptr<EmissiveMaterial>> emissiveMaterials{};
+    std::unordered_map<decltype(aiScene::mNumMaterials), std::shared_ptr<Material>> emissiveMaterials{};
     if(aiScene->HasMaterials())
     {
         for(decltype(aiScene::mNumMaterials) materialIndex = 0; materialIndex < aiScene->mNumMaterials; ++materialIndex)
@@ -52,7 +52,7 @@ std::optional<Scene> loadScene(const std::filesystem::path& path)
             }
             else
             {
-                auto material = std::make_shared<EmissiveMaterial>();
+                auto material = std::make_shared<Material>();
                 material->emissiveColor = {emissiveCol.r, emissiveCol.g, emissiveCol.b};
                 scene.materials.push_back(material);
                 emissiveMaterials.insert({materialIndex, material});
@@ -85,27 +85,17 @@ std::optional<Scene> loadScene(const std::filesystem::path& path)
 
         for(decltype(aiScene::mNumMeshes) meshIndex = 0; meshIndex < aiScene->mNumMeshes; ++meshIndex)
         {
-            std::shared_ptr<Mesh> mesh = std::make_shared<Mesh>();
+            Mesh mesh;
             const auto* aiMesh = aiScene->mMeshes[meshIndex];
-            if(emissiveMaterials.count(aiMesh->mMaterialIndex))
-            {
-                mesh->material = emissiveMaterials[aiMesh->mMaterialIndex];
-                scene.emissiveMeshes[emissiveIdx++] = mesh;
-            }
-            else
-            {
-                mesh->material = diffuseMaterials[aiMesh->mMaterialIndex];
-                scene.meshes[diffuseIdx++] = mesh;
-            }
-            mesh->path = path;
-            mesh->name = std::string(aiMesh->mName.C_Str());
-            mesh->vertices.resize(aiMesh->mNumVertices);
-            mesh->faces.resize(aiMesh->mNumFaces);
-            mesh->hasVertexNormals = aiMesh->HasNormals();
+            mesh.path = path;
+            mesh.name = std::string(aiMesh->mName.C_Str());
+            mesh.vertices.resize(aiMesh->mNumVertices);
+            mesh.faces.resize(aiMesh->mNumFaces);
+            mesh.hasVertexNormals = aiMesh->HasNormals();
 
             decltype(aiMesh::mNumVertices) vertexIndex = 0;
 
-            for(auto& vertex: mesh->vertices)
+            for(auto& vertex: mesh.vertices)
             {
                 if(aiMesh->HasPositions())
                 {
@@ -131,7 +121,7 @@ std::optional<Scene> loadScene(const std::filesystem::path& path)
 
             decltype(aiMesh::mNumFaces) faceIndex = 0;
 
-            for(auto& face: mesh->faces)
+            for(auto& face: mesh.faces)
             {
                 const auto& aiFace = aiMesh->mFaces[faceIndex];
 
@@ -140,13 +130,23 @@ std::optional<Scene> loadScene(const std::filesystem::path& path)
                     face.indices[faceVertexIndex] = aiFace.mIndices[faceVertexIndex];
                 }
 
-                const auto& ab = (mesh->vertices[face.indices[1]].pos - mesh->vertices[face.indices[0]].pos);
-                const auto& ac = (mesh->vertices[face.indices[2]].pos - mesh->vertices[face.indices[0]].pos);
+                const auto& ab = (mesh.vertices[face.indices[1]].pos - mesh.vertices[face.indices[0]].pos);
+                const auto& ac = (mesh.vertices[face.indices[2]].pos - mesh.vertices[face.indices[0]].pos);
 
                 face.normal = ab.cross(ac).normalized();
                 ++faceIndex;
             }
-            mesh->refreshBoundingBox();
+            mesh.refreshBoundingBox();
+            if(emissiveMaterials.count(aiMesh->mMaterialIndex))
+            {
+                mesh.material = emissiveMaterials[aiMesh->mMaterialIndex];
+                scene.emissiveMeshes.emplace_back(std::move(mesh));
+            }
+            else
+            {
+                mesh.material = diffuseMaterials[aiMesh->mMaterialIndex];
+                scene.meshes.emplace_back(std::move(mesh));
+            }
         }
     }
 

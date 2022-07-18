@@ -96,32 +96,31 @@ void renderSceneRect(const std::shared_ptr<Camera>& camera,
 
 Vector3 castRay(const Ray& r, const Scene& scene, CasterParameters& renderParams)
 {
-    if(renderParams.depth == renderParams.maxDepth)
-    {
-        return Vector3::Zero();
-    }
-
     const auto lightIntersections = geometry::findClosestRayLightsIntersections(r, scene);
     const auto meshIntersections = geometry::findClosestRaySceneIntersections(r, scene);
     if(!(meshIntersections.faceIntersection.hit || lightIntersections.faceIntersection.hit))
     {
         return scene.backgroundColor;
     }
-    const auto rayMeshDist = (meshIntersections.faceIntersection.position - r.origin).norm();
-    const auto rayLightDist = (lightIntersections.faceIntersection.position - r.origin).norm();
+    const auto rayMeshDist = meshIntersections.faceIntersection.t;
+    const auto rayLightDist = lightIntersections.faceIntersection.t;
     if(lightIntersections.faceIntersection.hit &&
        (!meshIntersections.faceIntersection.hit || (rayLightDist < rayMeshDist)))
     {
         renderParams.isLight = true;
-        return dynamic_cast<EmissiveMaterial*>(lightIntersections.mesh->material.get())->emissiveColor;
+        return lightIntersections.mesh->material->emissiveColor;
     }
     const auto* hitMesh = meshIntersections.mesh;
     Vector3 normal = hitMesh->faces[meshIntersections.faceIdx].normal;
 
     Ray newRay{};
     newRay.dir = sampling::generateRandomUniformHemisphereRayDir(normal, renderParams.sampler);
-    newRay.origin = meshIntersections.faceIntersection.position + normal * 1e-4;
+    newRay.origin = meshIntersections.faceIntersection.t * r.dir + r.origin + normal * 1e-4;
     renderParams.depth++;
+    if(renderParams.depth == renderParams.maxDepth)
+    {
+        return Vector3::Zero();
+    }
     const auto radiance = castRay(newRay, scene, renderParams);
     return (hitMesh->material->diffuseColor.cwiseProduct(radiance));
 }

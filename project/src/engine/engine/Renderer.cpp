@@ -8,7 +8,7 @@ namespace engine
 {
 Renderer::Renderer()
 {
-    for(unsigned int threadIdx = 0; threadIdx < std::thread::hardware_concurrency(); ++threadIdx)
+    for(unsigned int threadIdx = 0; threadIdx < std::thread::hardware_concurrency() - 1; ++threadIdx)
     {
         m_threadPool.emplace_back(&Renderer::threadMission, this);
     }

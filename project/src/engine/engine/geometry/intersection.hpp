@@ -12,8 +12,8 @@ namespace engine
 {
 struct ENGINE_API RayTriangleIntersection
 {
-    Vector3 position{0.0, 0.0, 0.0};
     Vector2 uv{0.0, 0.0};
+    float t;
     bool hit{false};
 };
 

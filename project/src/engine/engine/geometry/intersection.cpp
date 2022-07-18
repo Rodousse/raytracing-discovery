@@ -10,13 +10,14 @@ namespace geometry
 {
 RayTriangleIntersection isRayIntersectingFace(const Ray& r, const Mesh& mesh, const FaceIndex faceIdx)
 {
-    RayTriangleIntersection returnVal{};
+    RayTriangleIntersection returnVal;
+    returnVal.hit = false;
     const auto& face = mesh.faces[faceIdx];
     const auto& vertex0 = mesh.vertices[face.indices[0]].pos;
     const auto& vertex1 = mesh.vertices[face.indices[1]].pos;
     const auto& vertex2 = mesh.vertices[face.indices[2]].pos;
     Vector3 edge1, edge2, h, s, q;
-    Floating a, f, u, v;
+    Floating a, f;
     edge1 = vertex1 - vertex0;
     edge2 = vertex2 - vertex0;
     h = r.dir.cross(edge2);
@@ -25,20 +26,16 @@ RayTriangleIntersection isRayIntersectingFace(const Ray& r, const Mesh& mesh, co
         return returnVal;
     f = static_cast<Floating>(1.0) / a;
     s = r.origin - vertex0;
-    u = f * s.dot(h);
-    if(u < static_cast<Floating>(0.0) || u > static_cast<Floating>(1.0))
+    returnVal.uv.x() = f * s.dot(h);
+    if(returnVal.uv.x() < static_cast<Floating>(0.0) || returnVal.uv.x() > static_cast<Floating>(1.0))
         return returnVal;
     q = s.cross(edge1);
-    v = f * r.dir.dot(q);
-    if(v < static_cast<Floating>(0.0) || u + v > static_cast<Floating>(1.0))
+    returnVal.uv.y() = f * r.dir.dot(q);
+    if(returnVal.uv.y() < static_cast<Floating>(0.0) ||
+       returnVal.uv.x() + returnVal.uv.y() > static_cast<Floating>(1.0))
         return returnVal;
-    float t = f * edge2.dot(q);
-    if(t > EPSILON)
-    {
-        returnVal.position = r.origin + r.dir * t;
-        returnVal.uv = {u, v};
-        returnVal.hit = true;
-    }
+    returnVal.t = f * edge2.dot(q);
+    returnVal.hit = returnVal.t > EPSILON;
     return returnVal;
 }
 
@@ -136,21 +133,15 @@ RayAABBIntersection isRayIntersectingBoundingBox(const Ray& r, const AABoundingB
 
 RayMeshIntersections findRayLightsIntersections(const Ray& r, const Scene& scene)
 {
-    std::vector<Mesh*> candidates{};
+    RayMeshIntersections resultVal{};
     for(const auto& mesh: scene.emissiveMeshes)
     {
-        const auto intersectAABB = isRayIntersectingBoundingBox(r, mesh->aabb);
+        const auto intersectAABB = isRayIntersectingBoundingBox(r, mesh.aabb);
         if(intersectAABB.hit)
         {
-            candidates.emplace_back(mesh.get());
+            auto intersection = findRayMeshIntersections(r, mesh);
+            resultVal.splice(resultVal.end(), intersection);
         }
-    }
-
-    RayMeshIntersections resultVal{};
-    for(const auto& candidate: candidates)
-    {
-        auto intersection = findRayMeshIntersections(r, *candidate);
-        resultVal.splice(resultVal.end(), intersection);
     }
 
     return resultVal;
@@ -158,26 +149,20 @@ RayMeshIntersections findRayLightsIntersections(const Ray& r, const Scene& scene
 
 RayMeshIntersection findClosestRayLightsIntersections(const Ray& r, const Scene& scene)
 {
-    std::vector<Mesh*> candidates{};
-    for(const auto& mesh: scene.emissiveMeshes)
-    {
-        const auto intersectAABB = isRayIntersectingBoundingBox(r, mesh->aabb);
-        if(intersectAABB.hit)
-        {
-            candidates.emplace_back(mesh.get());
-        }
-    }
-
     RayMeshIntersection resultVal{};
     Floating closestDist = std::numeric_limits<Floating>::max();
-    for(const auto& candidate: candidates)
+    for(const auto& mesh: scene.emissiveMeshes)
     {
-        auto intersection = findClosestRayMeshIntersections(r, *candidate);
-        const Floating dist = (intersection.faceIntersection.position - r.origin).norm();
-        if(intersection.faceIntersection.hit && closestDist > dist)
+        const auto intersectAABB = isRayIntersectingBoundingBox(r, mesh.aabb);
+        if(intersectAABB.hit)
         {
-            resultVal = std::move(intersection);
-            closestDist = dist;
+            auto intersection = findClosestRayMeshIntersections(r, mesh);
+            const Floating dist = (intersection.faceIntersection.t * r.dir - r.origin).norm();
+            if(intersection.faceIntersection.hit && closestDist > dist)
+            {
+                resultVal = std::move(intersection);
+                closestDist = dist;
+            }
         }
     }
     return resultVal;
@@ -185,21 +170,15 @@ RayMeshIntersection findClosestRayLightsIntersections(const Ray& r, const Scene&
 
 RayMeshIntersections findRaySceneIntersections(const Ray& r, const Scene& scene)
 {
-    std::vector<Mesh*> candidates{};
+    RayMeshIntersections resultVal{};
     for(const auto& mesh: scene.meshes)
     {
-        const auto intersectAABB = isRayIntersectingBoundingBox(r, mesh->aabb);
+        const auto intersectAABB = isRayIntersectingBoundingBox(r, mesh.aabb);
         if(intersectAABB.hit)
         {
-            candidates.emplace_back(mesh.get());
+            auto intersection = findRayMeshIntersections(r, mesh);
+            resultVal.splice(resultVal.end(), intersection);
         }
-    }
-
-    RayMeshIntersections resultVal{};
-    for(const auto& candidate: candidates)
-    {
-        auto intersection = findRayMeshIntersections(r, *candidate);
-        resultVal.splice(resultVal.end(), intersection);
     }
 
     return resultVal;
@@ -207,26 +186,20 @@ RayMeshIntersections findRaySceneIntersections(const Ray& r, const Scene& scene)
 
 RayMeshIntersection findClosestRaySceneIntersections(const Ray& r, const Scene& scene)
 {
-    std::vector<Mesh*> candidates{};
-    for(const auto& mesh: scene.meshes)
-    {
-        const auto intersectAABB = isRayIntersectingBoundingBox(r, mesh->aabb);
-        if(intersectAABB.hit)
-        {
-            candidates.emplace_back(mesh.get());
-        }
-    }
-
     RayMeshIntersection resultVal{};
     Floating closestDist = std::numeric_limits<Floating>::max();
-    for(const auto& candidate: candidates)
+    for(const auto& mesh: scene.meshes)
     {
-        auto intersection = findClosestRayMeshIntersections(r, *candidate);
-        const Floating dist = (intersection.faceIntersection.position - r.origin).norm();
-        if(intersection.faceIntersection.hit && closestDist > dist)
+        const auto intersectAABB = isRayIntersectingBoundingBox(r, mesh.aabb);
+        if(intersectAABB.hit)
         {
-            resultVal = std::move(intersection);
-            closestDist = dist;
+            auto intersection = findClosestRayMeshIntersections(r, mesh);
+            const Floating dist = (intersection.faceIntersection.t * r.dir - r.origin).norm();
+            if(intersection.faceIntersection.hit && closestDist > dist)
+            {
+                resultVal = std::move(intersection);
+                closestDist = dist;
+            }
         }
     }
 
@@ -253,22 +226,18 @@ RayMeshIntersections findRayMeshIntersections(const Ray& r, const Mesh& mesh)
 RayMeshIntersection findClosestRayMeshIntersections(const Ray& r, const Mesh& mesh)
 {
     RayMeshIntersection returnVal{};
-    Floating closestDist = std::numeric_limits<Floating>::max();
+    Floating closestT = std::numeric_limits<Floating>::max();
     for(FaceIndex faceIdx = 0; faceIdx < mesh.faces.size(); ++faceIdx)
     {
         auto faceInter = isRayIntersectingFace(r, mesh, faceIdx);
-        if(faceInter.hit)
+        if(faceInter.hit && (closestT > faceInter.t))
         {
-            const Floating dist = (faceInter.position - r.origin).norm();
-            if(closestDist > dist)
-            {
-                returnVal.faceIntersection = std::move(faceInter);
-                returnVal.mesh = &mesh;
-                returnVal.faceIdx = faceIdx;
-                closestDist = dist;
-            }
+            returnVal.faceIntersection = std::move(faceInter);
+            returnVal.faceIdx = faceIdx;
+            closestT = faceInter.t;
         }
     }
+    returnVal.mesh = &mesh;
 
     return returnVal;
 }
